@@ -100,6 +100,14 @@
   .btn.save { border-color: var(--line); }
   .btn.save.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
   .btn.link { color: var(--ink-soft); border-color: var(--line-soft); }
+  .btn.post { color: var(--accent); border-color: var(--accent); }
+
+  /* SNSから来たときのハイライト */
+  .card.spotlight { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft), var(--shadow); }
+  .spotlight-note {
+    margin: 8px 18px 0; padding: 10px 14px; font-size: 12.5px; line-height: 1.7;
+    background: var(--accent-soft); color: var(--accent); border-radius: 12px; letter-spacing: .03em;
+  }
   select.status {
     font-family: inherit; font-size: 12px; padding: 7px 11px; border-radius: 17px;
     border: 1px solid var(--line); background: var(--paper-2); color: var(--ink-soft);
@@ -284,7 +292,7 @@ function cardHtml(s) {
     ? '<div class="badge visited">行ったお店</div>'
     : e.status === '行きたい' ? '<div class="badge">行きたいお店</div>' : '';
   return `
-  <article class="card ${e.saved ? 'saved' : ''}" data-id="${s.id}">
+  <article class="card ${e.saved ? 'saved' : ''} ${s.id === spotlightId ? 'spotlight' : ''}" data-id="${s.id}">
     <div class="area">${s.area}</div>
     <h2>${s.name}</h2>
     <div class="addr">${s.address}</div>
@@ -296,25 +304,36 @@ function cardHtml(s) {
         ${STATUSES.map((st) => `<option ${st === e.status ? 'selected' : ''}>${st}</option>`).join('')}
       </select>
       <a class="btn link" href="${mapsUrl(s)}" target="_blank" rel="noopener">地図で開く</a>
-      ${s.instagram ? `<a class="btn link" href="${s.instagram}" target="_blank" rel="noopener">Instagram</a>` : ''}
+      ${s.postUrl ? `<a class="btn post" href="${s.postUrl}" target="_blank" rel="noopener">投稿を見る</a>` : ''}
+      ${s.instagram ? `<a class="btn link" href="${s.instagram}" target="_blank" rel="noopener">お店のIG</a>` : ''}
     </div>
   </article>`;
 }
 
+// SNS投稿から ?shop=ID で来たときに指す店（深いリンク）
+let spotlightId = new URLSearchParams(location.search).get('shop');
+
 function filtered() {
-  return shops.filter((s) => {
+  const list = shops.filter((s) => {
     if (areaFilter !== 'すべて' && s.area !== areaFilter) return false;
     if (query && !(s.name + s.area + s.address).toLowerCase().includes(query.toLowerCase())) return false;
     return true;
   });
+  // スポットライト中の店を先頭へ
+  if (spotlightId) list.sort((a, b) => (a.id === spotlightId ? -1 : b.id === spotlightId ? 1 : 0));
+  return list;
 }
 
 function render() {
   // 一覧
   const list = filtered();
   $('#count').textContent = `${list.length} 軒`;
+  const spot = spotlightId && shops.find((s) => s.id === spotlightId);
+  const spotNote = spot
+    ? `<div class="spotlight-note">投稿で見かけた <b>${spot.name}</b> を表示しています。♡を押すと、あなたの帳面に残せます。</div>`
+    : '';
   $('#list').innerHTML = list.length
-    ? list.map(cardHtml).join('')
+    ? spotNote + list.map(cardHtml).join('')
     : '<div class="empty"><span class="mark">⚲</span>見つかりませんでした。</div>';
 
   // マイリスト（行きたい → 行った → その他保存）
