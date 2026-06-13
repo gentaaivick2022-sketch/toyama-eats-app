@@ -1,6 +1,10 @@
 # Render デプロイ設定（Blueprint）
 # Render ダッシュボードで「New +」→「Blueprint」からこのリポジトリを指定すると自動で読まれる。
 # 手動で Web Service を作る場合は、この設定値を画面で入力すればよい。
+#
+# ⚠️ 無料プラン（plan: free）では永続ディスク(disk)が使えないため外してある。
+#    → 登録ユーザー(users.json)は再起動・再デプロイで消える（デモ用途では許容）。
+#    恒久保存が必要になったら plan を starter 等にし、下記コメントの disk を復活させる。
 services:
   - type: web
     name: toyama-eats-app
@@ -8,10 +12,11 @@ services:
     plan: free
     buildCommand: "" # 依存ゼロなのでビルド不要
     startCommand: node scripts/serve-app.mjs
-    envVars:
-      - key: DATA_DIR
-        value: /var/data        # 永続ディスクのマウント先（利用者データの保存場所）
-    disk:
-      name: user-data
-      mountPath: /var/data      # ここに users.json が保存される（再デプロイで消えない）
-      sizeGB: 1
+    # 有料プランに上げて登録を永続化する場合は、以下のコメントを解除する:
+    # envVars:
+    #   - key: DATA_DIR
+    #     value: /var/data
+    # disk:
+    #   name: user-data
+    #   mountPath: /var/data
+    #   sizeGB: 1
