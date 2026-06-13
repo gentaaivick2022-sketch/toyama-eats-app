@@ -1,0 +1,13 @@
+{
+  "name": "toyama_eats+ お店帳",
+  "short_name": "お店帳",
+  "description": "富山の、つくり手のいるお店を訪ねる記録帳",
+  "lang": "ja",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#faf7f1",
+  "theme_color": "#faf7f1",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

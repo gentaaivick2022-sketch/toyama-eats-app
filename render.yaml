@@ -1,0 +1,17 @@
+# Render デプロイ設定（Blueprint）
+# Render ダッシュボードで「New +」→「Blueprint」からこのリポジトリを指定すると自動で読まれる。
+# 手動で Web Service を作る場合は、この設定値を画面で入力すればよい。
+services:
+  - type: web
+    name: toyama-eats-app
+    runtime: node
+    plan: free
+    buildCommand: "" # 依存ゼロなのでビルド不要
+    startCommand: node scripts/serve-app.mjs
+    envVars:
+      - key: DATA_DIR
+        value: /var/data        # 永続ディスクのマウント先（利用者データの保存場所）
+    disk:
+      name: user-data
+      mountPath: /var/data      # ここに users.json が保存される（再デプロイで消えない）
+      sizeGB: 1

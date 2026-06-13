@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>toyama_eats+ お店帳</title>
+<meta name="description" content="富山の、つくり手のいるお店を訪ねる記録帳。気になるお店を保存して、暮らしと旅のそばに。" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" href="icon.svg" type="image/svg+xml" />
+<meta name="theme-color" content="#faf7f1" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<style>
+  :root {
+    --paper: #f7f3ea;       /* 生成りの紙 */
+    --paper-2: #fffdf8;     /* カード面（ほのかに明るい） */
+    --ink: #33302a;         /* 墨 */
+    --ink-soft: #7a7468;    /* 添えの墨 */
+    --ink-faint: #a8a293;
+    --line: #e7e0d2;
+    --line-soft: #efe9dc;
+    --accent: #927444;      /* 落ち着いた琥珀（暖色寄り） */
+    --accent-soft: #efe6d4;
+    --good: #5f7459;        /* 苔色（行った） */
+    --radius: 16px;
+    --shadow: 0 1px 2px rgba(51,48,42,.04), 0 6px 18px rgba(51,48,42,.05);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    background: var(--paper); color: var(--ink);
+    font-family: "Hiragino Mincho ProN", "Yu Mincho", "YuMincho", "Noto Serif JP", serif;
+    font-size: 15px; line-height: 1.75; letter-spacing: .01em;
+    display: flex; flex-direction: column;
+    -webkit-font-smoothing: antialiased;
+  }
+  header {
+    padding: max(16px, env(safe-area-inset-top)) 20px 13px;
+    border-bottom: 1px solid var(--line);
+    text-align: center; background: var(--paper);
+  }
+  header h1 { font-size: 18px; font-weight: 500; letter-spacing: .18em; }
+  header h1 .plus { color: var(--accent); font-weight: 400; }
+  header p { font-size: 11px; color: var(--ink-soft); letter-spacing: .22em; margin-top: 4px; }
+
+  main { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+  .pane { flex: 1; overflow-y: auto; display: none; -webkit-overflow-scrolling: touch; }
+  .pane.active { display: block; }
+  #pane-map { position: relative; }
+  #map { position: absolute; inset: 0; }
+
+  /* 検索・絞り込み */
+  .toolbar { padding: 14px 18px 2px; position: sticky; top: 0; background: var(--paper); z-index: 5; }
+  .search {
+    width: 100%; padding: 11px 16px; font: inherit; font-size: 14px;
+    border: 1px solid var(--line); border-radius: 22px; background: var(--paper-2); color: var(--ink);
+    outline: none; transition: border-color .2s;
+  }
+  .search::placeholder { color: var(--ink-faint); letter-spacing: .05em; }
+  .search:focus { border-color: var(--accent); }
+  .chips { display: flex; gap: 8px; overflow-x: auto; padding: 12px 2px 10px; scrollbar-width: none; }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip {
+    flex: 0 0 auto; padding: 5px 14px; font-size: 12px; letter-spacing: .1em;
+    border: 1px solid var(--line); border-radius: 18px; background: var(--paper-2); color: var(--ink-soft);
+    cursor: pointer; font-family: inherit; transition: all .15s;
+  }
+  .chip.on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+  .count { padding: 2px 20px 2px; font-size: 11px; letter-spacing: .12em; color: var(--ink-faint); }
+
+  /* カード */
+  .list { padding: 6px 18px 96px; }
+  .card {
+    background: var(--paper-2); border: 1px solid var(--line-soft); border-radius: var(--radius);
+    padding: 17px 19px 15px; margin-bottom: 13px; box-shadow: var(--shadow);
+    position: relative; overflow: hidden;
+  }
+  .card.saved { border-color: var(--accent); }
+  .card.saved::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--accent);
+  }
+  .card .area { font-size: 10.5px; letter-spacing: .22em; color: var(--accent); }
+  .card h2 { font-size: 17px; font-weight: 500; letter-spacing: .05em; margin: 3px 0 2px; line-height: 1.4; }
+  .card .addr { font-size: 11.5px; color: var(--ink-soft); letter-spacing: .03em; }
+  .card .note { font-size: 13px; margin-top: 8px; color: var(--ink); }
+  .card .badge {
+    display: inline-block; font-size: 10.5px; letter-spacing: .12em; padding: 2px 9px;
+    border-radius: 11px; margin-top: 9px; background: var(--accent-soft); color: var(--accent);
+  }
+  .card .badge.visited { background: #e7ece4; color: var(--good); }
+  .card .row { display: flex; align-items: center; gap: 7px; margin-top: 13px; flex-wrap: wrap; }
+  .btn {
+    font-family: inherit; font-size: 12px; letter-spacing: .06em;
+    padding: 7px 14px; border-radius: 17px; border: 1px solid var(--line);
+    background: var(--paper-2); color: var(--ink); cursor: pointer; text-decoration: none;
+    display: inline-block; transition: transform .1s, background .15s;
+  }
+  .btn:active { transform: scale(.96); }
+  .btn.save { border-color: var(--line); }
+  .btn.save.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+  .btn.link { color: var(--ink-soft); border-color: var(--line-soft); }
+  select.status {
+    font-family: inherit; font-size: 12px; padding: 7px 11px; border-radius: 17px;
+    border: 1px solid var(--line); background: var(--paper-2); color: var(--ink-soft);
+    appearance: none; cursor: pointer;
+  }
+  select.status.want { color: var(--accent); border-color: var(--accent); }
+  select.status.visited { color: var(--good); border-color: var(--good); }
+
+  .empty { text-align: center; color: var(--ink-soft); padding: 64px 34px; font-size: 13px; line-height: 2; }
+  .empty .mark { font-size: 26px; color: var(--accent); display: block; margin-bottom: 12px; opacity: .7; }
+
+  /* タブ */
+  nav {
+    display: flex; border-top: 1px solid var(--line); background: var(--paper);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  nav button {
+    flex: 1; padding: 12px 0 10px; background: none; border: none; cursor: pointer;
+    font-family: inherit; font-size: 11px; letter-spacing: .16em; color: var(--ink-faint);
+    transition: color .15s;
+  }
+  nav button.on { color: var(--ink); }
+  nav button .ico { display: block; font-size: 15px; margin-bottom: 3px; opacity: .85; }
+  nav button.on .ico { color: var(--accent); opacity: 1; }
+
+  .proto-note {
+    font-size: 10px; color: var(--ink-faint); text-align: center; padding: 7px 16px 11px;
+    letter-spacing: .05em; background: var(--paper);
+  }
+  .leaflet-popup-content { font-family: inherit; }
+  .leaflet-popup-content h3 { font-size: 14px; margin-bottom: 2px; }
+  .leaflet-popup-content a { color: var(--accent); }
+
+  /* アカウント */
+  header { position: relative; }
+  .acct-btn {
+    position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+    font-family: inherit; font-size: 11.5px; letter-spacing: .06em;
+    padding: 5px 12px; border-radius: 16px; border: 1px solid var(--line);
+    background: #fff; color: var(--ink-soft); cursor: pointer; max-width: 96px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .acct-btn.in { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+
+  .overlay {
+    position: fixed; inset: 0; background: rgba(46,43,38,.45); z-index: 50;
+    display: none; align-items: flex-end; justify-content: center;
+  }
+  .overlay.show { display: flex; }
+  .sheet {
+    background: var(--paper); width: 100%; max-width: 480px;
+    border-radius: 18px 18px 0 0; padding: 26px 24px calc(24px + env(safe-area-inset-bottom));
+  }
+  .sheet h2 { font-size: 16px; letter-spacing: .1em; font-weight: 600; margin-bottom: 6px; text-align: center; }
+  .sheet .lede { font-size: 13px; color: var(--ink-soft); text-align: center; margin-bottom: 16px; }
+  .sheet input {
+    width: 100%; padding: 11px 14px; margin-bottom: 10px; font: inherit; font-size: 15px;
+    border: 1px solid var(--line); border-radius: 12px; background: #fff; outline: none;
+  }
+  .sheet input:focus { border-color: var(--accent); }
+  .sheet .primary {
+    width: 100%; padding: 12px; font-family: inherit; font-size: 14px; letter-spacing: .1em;
+    border: none; border-radius: 12px; background: var(--ink); color: var(--paper); cursor: pointer;
+  }
+  .sheet .ghost {
+    width: 100%; padding: 11px; margin-top: 8px; font-family: inherit; font-size: 13px;
+    border: none; background: none; color: var(--ink-soft); cursor: pointer; text-decoration: underline;
+  }
+  .sheet .msg { font-size: 12.5px; color: #a05050; min-height: 18px; margin: 2px 0 6px; text-align: center; }
+  .sheet .ok { color: var(--good); }
+  .sheet .fineprint { font-size: 10.5px; color: var(--ink-soft); margin-top: 12px; line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>toyama_eats<span class="plus">＋</span>　お店帳</h1>
+  <p>富山の、つくり手のいるお店を訪ねる記録帳</p>
+  <button class="acct-btn" id="acctBtn" onclick="openAccount()">登録</button>
+</header>
+
+<main>
+  <!-- 一覧 -->
+  <section class="pane active" id="pane-list">
+    <div class="toolbar">
+      <input class="search" id="search" type="search" placeholder="お店をさがす（店名・エリア）" />
+      <div class="chips" id="chips"></div>
+    </div>
+    <div class="count" id="count"></div>
+    <div class="list" id="list"></div>
+  </section>
+
+  <!-- 地図 -->
+  <section class="pane" id="pane-map">
+    <div id="map"></div>
+  </section>
+
+  <!-- マイリスト -->
+  <section class="pane" id="pane-mine">
+    <div class="count" id="mineCount" style="padding-top:16px"></div>
+    <div class="list" id="mine"></div>
+  </section>
+</main>
+
+<nav>
+  <button data-pane="list" class="on"><span class="ico">▤</span>一覧</button>
+  <button data-pane="map"><span class="ico">⚲</span>地図</button>
+  <button data-pane="mine"><span class="ico">♡</span>マイリスト</button>
+</nav>
+<div class="proto-note">プロトタイプ版 — 掲載店舗は社内デモ用です（公開前に各店舗の許可を確認します）</div>
+
+<!-- ようこそ（初回・SNSから来た人向け） -->
+<div class="overlay" id="welcome">
+  <div class="sheet">
+    <h2>ようこそ、お店帳へ</h2>
+    <p class="lede">Instagram「toyama_eats+」で出会ったお店を、<br>あなたの帳面に集めておける場所です。<br>気になるお店に ♡ を。旅の前にひらくと、寄り道がたのしくなります。</p>
+    <button class="primary" onclick="closeWelcome(); openAccount();">ニックネームで登録して使う</button>
+    <button class="ghost" onclick="closeWelcome()">まずは見てみる（登録なし）</button>
+    <p class="fineprint">登録するとニックネームとあいことばだけで、別の端末からも自分のリストをひらけます。メールアドレスは不要です。</p>
+  </div>
+</div>
+
+<!-- アカウント（登録・ログイン・ログアウト） -->
+<div class="overlay" id="account" onclick="if(event.target===this) closeAccount()">
+  <div class="sheet">
+    <div id="acctOut">
+      <h2>じぶんの帳面をつくる</h2>
+      <p class="lede">ニックネームと、4〜8桁のあいことば（数字）だけ。<br>いまの ♡ もそのまま引き継がれます。</p>
+      <input id="acctName" type="text" placeholder="ニックネーム（20文字まで）" maxlength="20" autocomplete="username" />
+      <input id="acctPin" type="password" inputmode="numeric" placeholder="あいことば（4〜8桁の数字）" maxlength="8" autocomplete="current-password" />
+      <p class="msg" id="acctMsg"></p>
+      <button class="primary" id="acctSubmit" onclick="submitAccount()">登録する</button>
+      <button class="ghost" id="acctSwitch" onclick="switchMode()">登録済みの方はこちら（ログイン）</button>
+      <p class="fineprint">※ プロトタイプのため簡易な仕組みです。本公開時はより安全なログインに切り替わります。</p>
+    </div>
+    <div id="acctIn" style="display:none">
+      <h2 id="acctHello">こんにちは</h2>
+      <p class="lede">♡やステータスは自動でこの帳面に残ります。<br>別の端末でも、同じニックネームとあいことばでひらけます。</p>
+      <p class="msg ok" id="syncMsg"></p>
+      <button class="ghost" onclick="logout()">ログアウト</button>
+      <button class="ghost" onclick="closeAccount()">とじる</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+const STORE_KEY = 'toyamaEats.myShops.v1';
+const STATUSES = ['未訪問', '行きたい', '行った'];
+let shops = [];
+let my = JSON.parse(localStorage.getItem(STORE_KEY) || '{}'); // { id: {saved:true, status:'行きたい'} }
+let areaFilter = 'すべて';
+let query = '';
+let map = null, markers = [];
+
+const AUTH_KEY = 'toyamaEats.auth.v1';
+const SEEN_KEY = 'toyamaEats.welcomed.v1';
+let auth = JSON.parse(localStorage.getItem(AUTH_KEY) || 'null'); // {token, name}
+
+const $ = (s) => document.querySelector(s);
+const save = () => { localStorage.setItem(STORE_KEY, JSON.stringify(my)); scheduleSync(); };
+const entry = (id) => my[id] || { saved: false, status: '未訪問' };
+const mapsUrl = (s) => 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(s.name + ' ' + s.address);
+
+function toggleSave(id) {
+  const e = entry(id);
+  e.saved = !e.saved;
+  my[id] = e; save(); render();
+}
+function setStatus(id, status) {
+  const e = entry(id);
+  e.status = status;
+  if (status !== '未訪問') e.saved = true; // ステータスを付けたら自動でマイリスト入り
+  my[id] = e; save(); render();
+}
+
+function cardHtml(s) {
+  const e = entry(s.id);
+  const statusCls = e.status === '行った' ? 'visited' : e.status === '行きたい' ? 'want' : '';
+  const badge = e.status === '行った'
+    ? '<div class="badge visited">行ったお店</div>'
+    : e.status === '行きたい' ? '<div class="badge">行きたいお店</div>' : '';
+  return `
+  <article class="card ${e.saved ? 'saved' : ''}" data-id="${s.id}">
+    <div class="area">${s.area}</div>
+    <h2>${s.name}</h2>
+    <div class="addr">${s.address}</div>
+    ${s.note ? `<div class="note">${s.note}</div>` : ''}
+    ${badge}
+    <div class="row">
+      <button class="btn save ${e.saved ? 'on' : ''}" onclick="toggleSave('${s.id}')">${e.saved ? '♥ 気になる' : '♡ 気になる'}</button>
+      <select class="status ${statusCls}" onchange="setStatus('${s.id}', this.value)">
+        ${STATUSES.map((st) => `<option ${st === e.status ? 'selected' : ''}>${st}</option>`).join('')}
+      </select>
+      <a class="btn link" href="${mapsUrl(s)}" target="_blank" rel="noopener">地図で開く</a>
+      ${s.instagram ? `<a class="btn link" href="${s.instagram}" target="_blank" rel="noopener">Instagram</a>` : ''}
+    </div>
+  </article>`;
+}
+
+function filtered() {
+  return shops.filter((s) => {
+    if (areaFilter !== 'すべて' && s.area !== areaFilter) return false;
+    if (query && !(s.name + s.area + s.address).toLowerCase().includes(query.toLowerCase())) return false;
+    return true;
+  });
+}
+
+function render() {
+  // 一覧
+  const list = filtered();
+  $('#count').textContent = `${list.length} 軒`;
+  $('#list').innerHTML = list.length
+    ? list.map(cardHtml).join('')
+    : '<div class="empty"><span class="mark">⚲</span>見つかりませんでした。</div>';
+
+  // マイリスト（行きたい → 行った → その他保存）
+  const mine = shops.filter((s) => entry(s.id).saved);
+  const order = { '行きたい': 0, '行った': 1, '未訪問': 2 };
+  mine.sort((a, b) => order[entry(a.id).status] - order[entry(b.id).status]);
+  $('#mineCount').textContent = mine.length ? `わたしの帳面　${mine.length} 軒` : '';
+  $('#mine').innerHTML = mine.length
+    ? mine.map(cardHtml).join('')
+    : '<div class="empty"><span class="mark">♡</span>♡を押すと、気になるお店がここに集まります。<br>旅の前にひらくと、寄り道がたのしくなります。</div>';
+
+  // 地図ピンの色更新（保存＝琥珀・未保存＝墨）
+  markers.forEach(({ id, marker }) => {
+    const el = marker._icon;
+    if (el) el.style.filter = entry(id).saved
+      ? 'hue-rotate(155deg) saturate(.85) brightness(.95)' : 'grayscale(.4) opacity(.75)';
+  });
+}
+
+function initChips() {
+  const areas = ['すべて', ...new Set(shops.map((s) => s.area))];
+  $('#chips').innerHTML = areas
+    .map((a) => `<button class="chip ${a === areaFilter ? 'on' : ''}" data-area="${a}">${a}</button>`)
+    .join('');
+  $('#chips').querySelectorAll('.chip').forEach((c) =>
+    c.addEventListener('click', () => { areaFilter = c.dataset.area; initChips(); render(); }));
+}
+
+function initMap() {
+  if (map) return;
+  map = L.map('map', { zoomControl: false });
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors', maxZoom: 18,
+  }).addTo(map);
+  const pts = shops.filter((s) => s.lat && s.lon);
+  markers = pts.map((s) => {
+    const marker = L.marker([s.lat, s.lon]).addTo(map);
+    marker.bindPopup(`<h3>${s.name}</h3><div style="font-size:11px;color:#6f6a60">${s.area}</div>
+      <a href="${mapsUrl(s)}" target="_blank" rel="noopener">Google Mapsで開く</a>`);
+    return { id: s.id, marker };
+  });
+  map.fitBounds(L.latLngBounds(pts.map((s) => [s.lat, s.lon])).pad(0.08));
+}
+
+// ---- アカウント・同期 ----
+let mode = 'register'; // register | login
+let syncTimer = null;
+
+function api(path, options = {}) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (auth) headers['Authorization'] = 'Bearer ' + auth.token;
+  return fetch(path, { ...options, headers }).then(async (r) => {
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data.error || '通信できませんでした');
+    return data;
+  });
+}
+
+function scheduleSync() {
+  if (!auth) return;
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => {
+    api('/api/me/shops', { method: 'PUT', body: JSON.stringify({ shops: my }) })
+      .then(() => { const m = $('#syncMsg'); if (m) m.textContent = '同期しました（' + new Date().toLocaleTimeString('ja-JP') + '）'; })
+      .catch(() => {});
+  }, 600);
+}
+
+function mergeShops(server) {
+  // ログイン時: サーバーと端末の保存をやさしく統合（強い方を残す）
+  const rank = { '未訪問': 0, '行きたい': 1, '行った': 2 };
+  const merged = { ...server };
+  for (const [id, loc] of Object.entries(my)) {
+    const srv = merged[id];
+    if (!srv) { merged[id] = loc; continue; }
+    merged[id] = {
+      saved: srv.saved || loc.saved,
+      status: rank[loc.status] > rank[srv.status] ? loc.status : srv.status,
+    };
+  }
+  return merged;
+}
+
+function refreshAcctUi() {
+  const btn = $('#acctBtn');
+  btn.textContent = auth ? auth.name : '登録';
+  btn.classList.toggle('in', !!auth);
+  $('#acctOut').style.display = auth ? 'none' : '';
+  $('#acctIn').style.display = auth ? '' : 'none';
+  if (auth) $('#acctHello').textContent = 'こんにちは、' + auth.name + ' さん';
+}
+
+function openAccount() { refreshAcctUi(); $('#account').classList.add('show'); }
+function closeAccount() { $('#account').classList.remove('show'); }
+function closeWelcome() { localStorage.setItem(SEEN_KEY, '1'); $('#welcome').classList.remove('show'); }
+
+function switchMode() {
+  mode = mode === 'register' ? 'login' : 'register';
+  $('#acctSubmit').textContent = mode === 'register' ? '登録する' : 'ログイン';
+  $('#acctSwitch').textContent = mode === 'register' ? '登録済みの方はこちら（ログイン）' : 'はじめての方はこちら（登録）';
+  $('#acctMsg').textContent = '';
+}
+
+function submitAccount() {
+  const name = $('#acctName').value.trim();
+  const pin = $('#acctPin').value.trim();
+  $('#acctMsg').textContent = '';
+  const body = mode === 'register' ? { name, pin, shops: my } : { name, pin };
+  api('/api/' + mode, { method: 'POST', body: JSON.stringify(body) })
+    .then((d) => {
+      auth = { token: d.token, name: d.name };
+      localStorage.setItem(AUTH_KEY, JSON.stringify(auth));
+      my = mode === 'register' ? (d.shops || my) : mergeShops(d.shops || {});
+      localStorage.setItem(STORE_KEY, JSON.stringify(my));
+      if (mode === 'login') scheduleSync(); // 統合結果をサーバーへ
+      refreshAcctUi(); render();
+      $('#syncMsg').textContent = mode === 'register' ? '帳面ができました。' : 'おかえりなさい。リストを引き継ぎました。';
+    })
+    .catch((e) => { $('#acctMsg').textContent = e.message; });
+}
+
+function logout() {
+  auth = null;
+  localStorage.removeItem(AUTH_KEY);
+  refreshAcctUi(); closeAccount(); render();
+}
+
+// 起動時: ログイン済みならサーバーのリストを取得
+if (auth) {
+  api('/api/me/shops')
+    .then((d) => { my = mergeShops(d.shops || {}); localStorage.setItem(STORE_KEY, JSON.stringify(my)); render(); })
+    .catch(() => { /* オフライン時は端末の保存で動く */ });
+}
+refreshAcctUi();
+if (!localStorage.getItem(SEEN_KEY) && !auth) $('#welcome').classList.add('show');
+
+// タブ切り替え
+document.querySelectorAll('nav button').forEach((b) =>
+  b.addEventListener('click', () => {
+    document.querySelectorAll('nav button').forEach((x) => x.classList.toggle('on', x === b));
+    document.querySelectorAll('.pane').forEach((p) => p.classList.remove('active'));
+    $('#pane-' + b.dataset.pane).classList.add('active');
+    if (b.dataset.pane === 'map') { initMap(); setTimeout(() => map.invalidateSize(), 50); render(); }
+  }));
+
+$('#search').addEventListener('input', (e) => { query = e.target.value; render(); });
+
+fetch('data/shops.json')
+  .then((r) => r.json())
+  .then((d) => { shops = d.shops; initChips(); render(); })
+  .catch(() => { $('#list').innerHTML = '<div class="empty">データを読み込めませんでした。<br>node scripts/build-app-data.mjs を実行してください。</div>'; });
+
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>

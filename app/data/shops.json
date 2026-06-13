@@ -1,0 +1,259 @@
+{
+  "source": "toyama_eats+ お店帳",
+  "shopCount": 23,
+  "shops": [
+    {
+      "id": "nogi",
+      "name": "食堂NOGI",
+      "address": "富山県富山市開ヶ丘43-1",
+      "area": "富山市",
+      "lat": 36.674992,
+      "lon": 137.118134,
+      "genre": null,
+      "instagram": null,
+      "note": null
+    },
+    {
+      "id": "shop-02",
+      "name": "土遊野",
+      "address": "富山県富山市土167",
+      "area": "富山市",
+      "lat": 36.552605,
+      "lon": 137.175354,
+      "genre": null,
+      "instagram": null,
+      "note": null
+    },
+    {
+      "id": "shop-03",
+      "name": "石黒種麹店",
+      "address": "富山県南砺市福光新町54",
+      "area": "南砺市",
+      "lat": 36.55687,
+      "lon": 136.872269,
+      "genre": null,
+      "instagram": null,
+      "note": null
+    },
+    {
+      "id": "samanokoya",
+      "name": "Samanokoya",
+      "address": "富山県高岡市吉久2-3-14",
+      "area": "高岡市",
+      "lat": 36.779388,
+      "lon": 137.055115,
+      "genre": null,
+      "instagram": null,
+      "note": null
+    },
+    {
+      "id": "shop-05",
+      "name": "本川藤由商店",
+      "address": "富山県氷見市本町1-18",
+      "area": "氷見市",
+      "lat": 36.855507,
+      "lon": 136.986801,
+      "genre": null,
+      "instagram": null,
+      "note": null
+    },
+    {
+      "id": "shop-06",
+      "name": "浜田ファーム",
+      "address": "富山県黒部市堀切3000-2",
+      "area": "黒部市",
+      "lat": 36.875309,
+      "lon": 137.434341,
+      "genre": null,
+      "instagram": null,
+      "note": null
+    },
+    {
+      "id": "matsuki-coffee-roastery",
+      "name": "MATSUKI COFFEE ROASTERY",
+      "address": "富山県高岡市末広町9-56",
+      "area": "高岡市",
+      "lat": 36.74379,
+      "lon": 137.011887,
+      "genre": null,
+      "instagram": null,
+      "note": null
+    },
+    {
+      "id": "shop-08",
+      "name": "ぎんなん餅本舗 おがや本店",
+      "address": "富山県氷見市比美町6-17",
+      "area": "氷見市",
+      "lat": 36.856464,
+      "lon": 136.987549,
+      "genre": null,
+      "instagram": null,
+      "note": null
+    },
+    {
+      "id": "etre",
+      "name": "etre",
+      "address": "富山県富山市舟橋南町1-13",
+      "area": "富山市",
+      "lat": 36.695442,
+      "lon": 137.204895,
+      "genre": null,
+      "instagram": null,
+      "note": null
+    },
+    {
+      "id": "shop-10",
+      "name": "きときとファーム",
+      "address": "富山県小矢部市水牧180",
+      "area": "小矢部市",
+      "lat": 36.674854,
+      "lon": 136.891098,
+      "genre": null,
+      "instagram": null,
+      "note": null
+    },
+    {
+      "id": "shop-11",
+      "name": "カフェ ゴッコ",
+      "address": "富山県富山市今泉西部町1-6",
+      "area": "富山市",
+      "lat": 36.67387,
+      "lon": 137.209335,
+      "genre": null,
+      "instagram": null,
+      "note": null
+    },
+    {
+      "id": "shop-12",
+      "name": "カフェ ブルーリーブス",
+      "address": "富山県富山市萩原552-1",
+      "area": "富山市",
+      "lat": 36.662403,
+      "lon": 137.19516,
+      "genre": null,
+      "instagram": null,
+      "note": null
+    },
+    {
+      "id": "shop-13",
+      "name": "丹霞堂 富山駅前店",
+      "address": "富山県富山市桜町2-2-11",
+      "area": "富山市",
+      "lat": 36.698452,
+      "lon": 137.21312,
+      "genre": null,
+      "instagram": null,
+      "note": null
+    },
+    {
+      "id": "maybe-something-good",
+      "name": "maybe something good",
+      "address": "富山県富山市赤田983-2",
+      "area": "富山市",
+      "lat": 36.657551,
+      "lon": 137.209122,
+      "genre": null,
+      "instagram": null,
+      "note": null
+    },
+    {
+      "id": "home-kitchen",
+      "name": "HOME kitchen",
+      "address": "富山県富山市太郎丸2-3-6",
+      "area": "富山市",
+      "lat": 36.672779,
+      "lon": 137.21785,
+      "genre": null,
+      "instagram": null,
+      "note": null
+    },
+    {
+      "id": "shop-16",
+      "name": "やさいとエトセトラ",
+      "address": "富山県下新川郡入善町入膳7144-11",
+      "area": "下新川郡",
+      "lat": 36.938515,
+      "lon": 137.498886,
+      "genre": null,
+      "instagram": null,
+      "note": null
+    },
+    {
+      "id": "shop-17",
+      "name": "さて、羊に戻るとしよう",
+      "address": "富山県高岡市駅南5-4-7",
+      "area": "高岡市",
+      "lat": 36.738739,
+      "lon": 137.014938,
+      "genre": null,
+      "instagram": null,
+      "note": null
+    },
+    {
+      "id": "shop-18",
+      "name": "ジュンブレンドキッチン",
+      "address": "富山県高岡市西藤平蔵234",
+      "area": "高岡市",
+      "lat": 36.701996,
+      "lon": 136.983353,
+      "genre": null,
+      "instagram": null,
+      "note": null
+    },
+    {
+      "id": "shop-19",
+      "name": "埜紡",
+      "address": "富山県富山市八尾町道畑下中山581",
+      "area": "富山市",
+      "lat": 36.558197,
+      "lon": 137.131363,
+      "genre": null,
+      "instagram": null,
+      "note": null
+    },
+    {
+      "id": "cafe-uchikawa",
+      "name": "cafe uchikawa 六角堂",
+      "address": "富山県射水市八幡町1-20-13",
+      "area": "射水市",
+      "lat": 36.779728,
+      "lon": 137.091232,
+      "genre": null,
+      "instagram": null,
+      "note": null
+    },
+    {
+      "id": "ayaka",
+      "name": "森のめぐみ ayaka",
+      "address": "富山県砺波市安川860-7",
+      "area": "砺波市",
+      "lat": 36.62709,
+      "lon": 137.010391,
+      "genre": null,
+      "instagram": null,
+      "note": null
+    },
+    {
+      "id": "a-y-c-cafe",
+      "name": "A.Y.C cafe",
+      "address": "富山県富山市婦中町外輪野12324",
+      "area": "富山市",
+      "lat": 36.635834,
+      "lon": 137.095123,
+      "genre": null,
+      "instagram": null,
+      "note": null
+    },
+    {
+      "id": "shop-23",
+      "name": "食事処サンキュー",
+      "address": "富山県射水市青井谷822-1",
+      "area": "射水市",
+      "lat": 36.676826,
+      "lon": 137.066666,
+      "genre": null,
+      "instagram": null,
+      "note": null
+    }
+  ]
+}

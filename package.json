@@ -1,0 +1,13 @@
+{
+  "name": "toyama-eats-app",
+  "version": "0.2.0",
+  "private": true,
+  "description": "toyama_eats+ お店帳 — 富山のお店を保存・管理できるPWA（プロトタイプ）",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node scripts/serve-app.mjs"
+  }
+}
