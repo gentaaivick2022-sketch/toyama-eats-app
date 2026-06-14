@@ -101,6 +101,7 @@
   .btn.save.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
   .btn.link { color: var(--ink-soft); border-color: var(--line-soft); }
   .btn.post { color: var(--accent); border-color: var(--accent); }
+  .btn.remove { color: var(--ink-faint); border-color: var(--line-soft); margin-left: auto; }
 
   /* SNSから来たときのハイライト */
   .card.spotlight { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft), var(--shadow); }
@@ -273,19 +274,29 @@ const save = () => { localStorage.setItem(STORE_KEY, JSON.stringify(my)); schedu
 const entry = (id) => my[id] || { saved: false, status: '未訪問' };
 const mapsUrl = (s) => 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(s.name + ' ' + s.address);
 
+// 保存もステータスも付いていない「空」エントリは保持しない（無限に溜まるのを防ぐ）
+function prune(id) {
+  const e = my[id];
+  if (e && !e.saved && (!e.status || e.status === '未訪問')) delete my[id];
+}
 function toggleSave(id) {
   const e = entry(id);
   e.saved = !e.saved;
-  my[id] = e; save(); render();
+  my[id] = e; prune(id); save(); render();
 }
 function setStatus(id, status) {
   const e = entry(id);
   e.status = status;
   if (status !== '未訪問') e.saved = true; // ステータスを付けたら自動でマイリスト入り
-  my[id] = e; save(); render();
+  my[id] = e; prune(id); save(); render();
+}
+// 帳面から完全に外す（エントリごと削除＝同期先からも消える）
+function removeFromList(id) {
+  delete my[id];
+  save(); render();
 }
 
-function cardHtml(s) {
+function cardHtml(s, inMine = false) {
   const e = entry(s.id);
   const statusCls = e.status === '行った' ? 'visited' : e.status === '行きたい' ? 'want' : '';
   const badge = e.status === '行った'
@@ -306,6 +317,7 @@ function cardHtml(s) {
       <a class="btn link" href="${mapsUrl(s)}" target="_blank" rel="noopener">地図で開く</a>
       ${s.postUrl ? `<a class="btn post" href="${s.postUrl}" target="_blank" rel="noopener">投稿を見る</a>` : ''}
       ${s.instagram ? `<a class="btn link" href="${s.instagram}" target="_blank" rel="noopener">お店のIG</a>` : ''}
+      ${inMine ? `<button class="btn remove" onclick="removeFromList('${s.id}')">✕ 帳面から外す</button>` : ''}
     </div>
   </article>`;
 }
@@ -342,7 +354,7 @@ function render() {
   mine.sort((a, b) => order[entry(a.id).status] - order[entry(b.id).status]);
   $('#mineCount').textContent = mine.length ? `わたしの帳面　${mine.length} 軒` : '';
   $('#mine').innerHTML = mine.length
-    ? mine.map(cardHtml).join('')
+    ? mine.map((s) => cardHtml(s, true)).join('')
     : '<div class="empty"><span class="mark">♡</span>♡を押すと、気になるお店がここに集まります。<br>旅の前にひらくと、寄り道がたのしくなります。</div>';
 
   // 地図ピンの色更新（保存＝琥珀・未保存＝墨）
