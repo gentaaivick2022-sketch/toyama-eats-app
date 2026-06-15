@@ -1,5 +1,8 @@
-// 最小限のService Worker（アプリシェルをキャッシュ・データはネット優先）
-const CACHE = 'toyama-eats-app-v1';
+// 最小限のService Worker
+// 方針: HTML/アプリシェル・データとも「ネット優先（network-first）」。
+//   更新が必ず反映され、オフライン時だけキャッシュにフォールバックする。
+//   （v1 は cache-first で更新が反映されず白画面の原因になったため v2 で是正）
+const CACHE = 'toyama-eats-app-v2';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon.svg'];
 
 self.addEventListener('install', (e) => {
@@ -9,24 +12,24 @@ self.addEventListener('install', (e) => {
 
 self.addEventListener('activate', (e) => {
   e.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+    caches.keys()
+      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then(() => self.clients.claim()) // 既存タブも即座に新SWの管理下へ
   );
 });
 
 self.addEventListener('fetch', (e) => {
-  const url = new URL(e.request.url);
-  if (url.pathname.endsWith('shops.json')) {
-    // データはネット優先・落ちたらキャッシュ
-    e.respondWith(
-      fetch(e.request)
-        .then((res) => {
+  if (e.request.method !== 'GET') return; // 同期API(PUT/POST)はそのまま通す
+  // ネット優先：最新を取りに行き、成功したらキャッシュ更新。落ちたらキャッシュで代替。
+  e.respondWith(
+    fetch(e.request)
+      .then((res) => {
+        if (res && res.ok) {
           const copy = res.clone();
           caches.open(CACHE).then((c) => c.put(e.request, copy));
-          return res;
-        })
-        .catch(() => caches.match(e.request))
-    );
-    return;
-  }
-  e.respondWith(caches.match(e.request).then((hit) => hit || fetch(e.request)));
+        }
+        return res;
+      })
+      .catch(() => caches.match(e.request))
+  );
 });
